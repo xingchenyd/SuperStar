@@ -24,6 +24,8 @@ jobs:
           pip install -r ./requirements.txt 
           
       
+      # 账号 / 密码 / 课程ID 已在 Settings -> Secrets and variables -> Actions 中配置
+      # CHAOXING_USERNAME / CHAOXING_PASSWORD / CHAOXING_COURSE_LIST (课程ID: 269303116)
       - name: Run main.py
         env:
           CHAOXING_USERNAME: ${{ secrets.CHAOXING_USERNAME }}

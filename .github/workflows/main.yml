@@ -24,8 +24,12 @@ jobs:
           pip install -r ./requirements.txt 
           
       
-      # 账号 / 密码 / 课程ID 已在 Settings -> Secrets and variables -> Actions 中配置
-      # CHAOXING_USERNAME / CHAOXING_PASSWORD / CHAOXING_COURSE_LIST (课程ID: 269303116)
+      # 凭证存于 Actions Secrets，运行时注入，不写入代码仓库
+      - name: 写入 Cookie
+        env:
+          CHAOXING_COOKIES: ${{ secrets.CHAOXING_COOKIES }}
+        run: printf '%s' "$CHAOXING_COOKIES" > cookies.txt
+
       - name: Run main.py
         env:
           CHAOXING_USERNAME: ${{ secrets.CHAOXING_USERNAME }}
@@ -34,4 +38,4 @@ jobs:
           CHAOXING_COURSE_ID: '269303116'
           CHAOXING_CLAZZ_ID: '159978277'
           CHAOXING_CPI: '408969876'
-        run: python main.py -u "$CHAOXING_USERNAME" -p "$CHAOXING_PASSWORD" -l "$CHAOXING_COURSE_LIST"
+        run: python main.py --use-cookies -u "$CHAOXING_USERNAME" -p "$CHAOXING_PASSWORD" -l "$CHAOXING_COURSE_LIST"

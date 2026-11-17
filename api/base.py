@@ -172,6 +172,11 @@ class Chaoxing:
         if resp and resp.json()["status"] == True:
             save_cookies(_session)
             SessionManager.update_cookies()
+            # 登录态诊断
+            login_cookies = _session.cookies.get_dict()
+            global_cookies = SessionManager.get_instance()._session.cookies.get_dict()
+            logger.info(f"登录态诊断: 登录响应cookie数={len(login_cookies)}, 键={list(login_cookies.keys())}, 全局会话cookie数={len(global_cookies)}, 键={list(global_cookies.keys())}")
+            logger.info(f"登录响应体前500字符: {resp.text[:500]}")
             logger.info("登录成功...")
             return {"status": True, "msg": "登录成功"}
         else:

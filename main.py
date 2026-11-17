@@ -2,6 +2,7 @@
 import argparse
 import configparser
 import enum
+import os
 import sys
 import threading
 import time
@@ -441,6 +442,43 @@ def process_chapter(chaoxing: Chaoxing, course:dict[str, Any], point:dict[str, A
 
 
 
+def build_courses_from_env():
+    """从环境变量构造课程对象列表，用于原课程列表解析失效时的兜底。
+
+    需要 CHAOXING_COURSE_ID / CHAOXING_CLAZZ_ID / CHAOXING_CPI 三个变量，
+    均可从课程学习页 URL 的查询参数中获得。多个课程用英文逗号分隔，且三个
+    变量的项数需一一对应。
+    """
+    ids = [x.strip() for x in os.environ.get("CHAOXING_COURSE_ID", "").split(",") if x.strip()]
+    clazz_ids = [x.strip() for x in os.environ.get("CHAOXING_CLAZZ_ID", "").split(",") if x.strip()]
+    cpis = [x.strip() for x in os.environ.get("CHAOXING_CPI", "").split(",") if x.strip()]
+    titles = [x.strip() for x in os.environ.get("CHAOXING_COURSE_TITLE", "").split(",") if x.strip()]
+
+    if not ids:
+        return []
+    if len(clazz_ids) != len(ids) or len(cpis) != len(ids):
+        logger.warning("环境变量课程参数数量不匹配: courseId=%d, clazzId=%d, cpi=%d" % (len(ids), len(clazz_ids), len(cpis)))
+        return []
+
+    courses = []
+    for i, course_id in enumerate(ids):
+        title = titles[i] if i < len(titles) else ("课程 " + course_id)
+        course = {
+            "id": clazz_ids[i],
+            "info": "",
+            "roleid": "",
+            "clazzId": clazz_ids[i],
+            "courseId": course_id,
+            "cpi": cpis[i],
+            "title": title,
+            "desc": "",
+            "teacher": "",
+        }
+        courses.append(course)
+        logger.info("已从环境变量构造课程: %s (courseId=%s, clazzId=%s, cpi=%s)" % (title, course_id, clazz_ids[i], cpis[i]))
+    return courses
+
+
 def process_course(chaoxing: Chaoxing, course:dict[str, Any], config: dict):
     """处理单个课程"""
     logger.info(f"开始学习课程: {course['title']}")
@@ -539,7 +577,13 @@ def main():
         
         # 获取所有的课程列表
         all_course = chaoxing.get_course_list()
-        
+
+        # 兜底：超星新版页面结构变化可能导致课程列表解析为空，
+        # 此时用环境变量注入的课程对象替代
+        if not all_course:
+            logger.warning("课程列表解析结果为空，尝试从环境变量构造课程对象")
+            all_course = build_courses_from_env()
+
         # 过滤要学习的课程
         course_task = filter_courses(all_course, common_config.get("course_list"))
         

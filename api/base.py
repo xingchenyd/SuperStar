@@ -172,11 +172,6 @@ class Chaoxing:
         if resp and resp.json()["status"] == True:
             save_cookies(_session)
             SessionManager.update_cookies()
-            # 登录态诊断
-            login_cookies = _session.cookies.get_dict()
-            global_cookies = SessionManager.get_instance()._session.cookies.get_dict()
-            logger.info(f"登录态诊断: 登录响应cookie数={len(login_cookies)}, 键={list(login_cookies.keys())}, 全局会话cookie数={len(global_cookies)}, 键={list(global_cookies.keys())}")
-            logger.info(f"登录响应体前500字符: {resp.text[:500]}")
             logger.info("登录成功...")
             return {"status": True, "msg": "登录成功"}
         else:
@@ -236,8 +231,6 @@ class Chaoxing:
         # logger.trace(f"原始课程列表内容:\n{_resp.text}")
         logger.info("课程列表读取完毕...")
         course_list = decode_course_list(_resp.text)
-        if not course_list:
-            logger.info(f"课程列表接口诊断: HTTP状态={_resp.status_code}, 响应长度={len(_resp.text)}, 原始响应前2000字符:\n{_resp.text[:2000]}")
 
         _interaction_url = "https://mooc2-ans.chaoxing.com/mooc2-ans/visit/interaction"
         _interaction_resp = _session.get(_interaction_url)
@@ -343,11 +336,7 @@ class Chaoxing:
 
         logger.trace(f"原始章节列表内容:\n{_resp.text}")
         logger.info("课程章节读取成功...")
-        points = decode_course_point(_resp.text)
-        logger.info(f"章节解析诊断: HTTP状态={_resp.status_code}, 响应长度={len(_resp.text)}, 解析到章节数={len(points.get('points', []))}")
-        if not points.get("points"):
-            logger.info(f"章节接口原始响应前2000字符:\n{_resp.text[:2000]}")
-        return points
+        return decode_course_point(_resp.text)
 
     def get_job_list(self, course: dict, point: dict) -> tuple[list[dict], dict]:
         _session = SessionManager.get_session()
